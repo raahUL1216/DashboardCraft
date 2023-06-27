@@ -1,0 +1,25 @@
+1. Create an Architecture diagram based on above requirement
+- Please refer to dashboard-craft.svg file at the root of the project.
+
+2. Come up with a structure for how you would store the layout of the widgets, what type of widget etc.
+- Have used grid like structure to store the dashboard layout. Every widget can be placed on dashboard with row and column values. additionally, sizeX and sizeY represents how much box space will each widget take. Please refer to dashboard-craft-api/src/models/dashboard.model.js for more information.
+
+3. Which backend programming language and framework would you use and explain the choice.
+- Node.js is known for its event-driven, non-blocking I/O model, which allows it to handle high concurrency and large numbers of simultaneous connections efficiently. It is particularly well-suited for applications with real-time requirements and frequent data updates. So, I have used Javascript and NodeJS to implement the  
+
+4. Which database will you be using SQL or No-SQL explain the choice.
+- Widget configurations and layout design can evolve from time to time. So, chose mongodb here. Additionally, widget data source can be different relational database, data warehouse etc.   
+
+5. Give an appropriate database schema design to efficiently store and retrieve this data.
+- Refer to dashboard-craft-api/src/models/*
+
+6. Implement CRUD (Create, Read, Update, Delete) operations for dashboards and widgets explain the routes/graphql queries that you will create to achieve this.
+- Please check http://localhost:3000/v1/docs after starting the app. 
+
+7. How would you implement a mechanism for sharing dashboards with other users?
+- Have added shared_with field in dashboard model.
+
+8. How would you handle user authentication and authorization? Explain how you would implement a feature such as Role based access management.
+- Have used email/password to register the user and implemented JWT token strategy to handle the authentication. 
+
+Authorization & RBAC - Every user would have attached role like user, admin, sales etc. Create permission collection and attach permissions like create widget, create dashboard, edit dashboard etc to different roles. Check for permission in middleware to make sure user has necessary permission to perform the action.
