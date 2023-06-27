@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
-const { Widget } = require('../models');
 const ApiError = require('../utils/ApiError');
+
+const { Widget } = require('../models');
 
 /**
  * Create a widget

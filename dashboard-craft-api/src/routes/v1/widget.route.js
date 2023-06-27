@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/', auth(), widgetController.createWidget);
 router.get('/:id', auth(), widgetController.getWidget);
-router.put('/:id', auth(), widgetController.updateWidget);
+router.patch('/:id', auth(), widgetController.updateWidget);
 router.delete('/:id', auth(), widgetController.deleteWidget);
 
 module.exports = router;

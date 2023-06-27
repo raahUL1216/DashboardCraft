@@ -1,7 +1,7 @@
 const widgetTypes = {
   BAR_CHART: 'barChart',
   HEATMAP: 'heatmap',
-  PIE_CHART: 'pieChar',
+  PIE_CHART: 'pieChart',
   LINE: 'line',
   TABLE: 'table',
   PYRAMID: 'pyramid',

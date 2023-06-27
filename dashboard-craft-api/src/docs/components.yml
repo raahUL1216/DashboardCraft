@@ -51,6 +51,20 @@ components:
         data_source: www.google.com
         configuration: {}
 
+    Dashboard:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        layout:
+          type: object
+      example:
+        id: 5ebac534954b54139806c112
+        name: Dashboard 1
+        layout: [[{"widget": "649b241daa214b33bc3ca16a", "position": {"row": 1, "col": 1, "sizeX": 1, "sizeY": 1}}]]
+
     AuthTokens:
       type: object
       properties:

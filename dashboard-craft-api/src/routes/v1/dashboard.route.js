@@ -1,50 +1,33 @@
 const express = require('express');
 const auth = require('../../middlewares/auth');
-const validate = require('../../middlewares/validate');
-const userValidation = require('../../validations/user.validation');
-const userController = require('../../controllers/user.controller');
+
+const dashboardController = require('../../controllers/dashboard.controller');
 
 const router = express.Router();
 
-router
-  .route('/')
-  .post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
-  .get(auth('getUsers'), validate(userValidation.getUsers), userController.getUsers);
+router.post('/', auth(), dashboardController.createDashboard);
+router.get('/:id', auth(), dashboardController.getDashboard);
+router.patch('/:id', auth(), dashboardController.updateDashboard);
+router.delete('/:id', auth(), dashboardController.deleteDashboard);
 
-router
-  .route('/:userId')
-  .get(auth('getUsers'), validate(userValidation.getUser), userController.getUser)
-  .patch(auth('manageUsers'), validate(userValidation.updateUser), userController.updateUser)
-  .delete(auth('manageUsers'), validate(userValidation.deleteUser), userController.deleteUser);
+router.post('/:id/share/:userId', auth(), dashboardController.shareDashboard);
 
 module.exports = router;
-
-// /dashboards - Create a new dashboard with the provided data.
-// Read: GET /dashboards/:id - Retrieve a specific dashboard by its ID.
-// Update: PUT /dashboards/:id - Update an existing dashboard with the provided data.
-// Delete: DELETE /dashboards/:id
-
-// Create: POST /dashboards/:dashboardId/widgets - Create a new widget on a specific dashboard.
-// Read: GET /dashboards/:dashboardId/widgets/:widgetId - Retrieve a specific widget on a specific dashboard.
-// Update: PUT /dashboards/:dashboardId/widgets/:widgetId - Update an existing widget on a specific dashboard.
-// Delete: DELETE /dashboards/:dashboardId/widgets/:widgetId - Delete a specific widget on a specific dashboard.
-
-// Implement an API endpoint (e.g., POST /dashboards/:id/share) or GraphQL mutation to add users to the shared_users list for a specific dashboard.
 
 /**
  * @swagger
  * tags:
- *   name: Users
- *   description: User management and retrieval
+ *   name: Dashboards
+ *   description: Dashboard management
  */
 
 /**
  * @swagger
- * /users:
+ * /dashboard:
  *   post:
- *     summary: Create a user
- *     description: Only admins can create other users.
- *     tags: [Users]
+ *     summary: Create a dashboard
+ *     description: Create dashboard and its layout with widgets.
+ *     tags: [Dashboards]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -55,103 +38,23 @@ module.exports = router;
  *             type: object
  *             required:
  *               - name
- *               - email
- *               - password
- *               - role
+ *               - layout
  *             properties:
  *               name:
  *                 type: string
- *               email:
- *                 type: string
- *                 format: email
- *                 description: must be unique
- *               password:
- *                 type: string
- *                 format: password
- *                 minLength: 8
- *                 description: At least one number and one letter
- *               role:
- *                  type: string
- *                  enum: [user, admin]
+ *               layout:
+ *                 type: object
+ *                 description: layout contains n*3 matrix of objects with properties (widget id and widget position)
  *             example:
- *               name: fake name
- *               email: fake@example.com
- *               password: password1
- *               role: user
+ *               name: Dashboard 1
+ *               layout: [[{"widget":"649b241daa214b33bc3ca16a","position":{"row":1,"col":1,"sizeX":1,"sizeY":1}},{"widget":"649b51d05025f55720347d93","position":{"row":1,"col":2,"sizeX":1,"sizeY":1}},{"widget":"649b52234f03d61f5cad38eb","position":{"row":1,"col":3,"sizeX":1,"sizeY":1}}],[{"widget":"649b52334f03d61f5cad38ee","position":{"row":2,"col":1,"sizeX":2,"sizeY":1}},{"widget":"649b52474f03d61f5cad38f1","position":{"row":2,"col":3,"sizeX":1,"sizeY":2}}],[{"widget":"649b52544f03d61f5cad38f4","position":{"row":3,"col":1,"sizeX":1,"sizeY":1}},{"widget":"649b527a4f03d61f5cad38f9","position":{"row":3,"col":2,"sizeX":1,"sizeY":1}}]]
  *     responses:
  *       "201":
  *         description: Created
  *         content:
  *           application/json:
  *             schema:
- *                $ref: '#/components/schemas/User'
- *       "400":
- *         $ref: '#/components/responses/DuplicateEmail'
- *       "401":
- *         $ref: '#/components/responses/Unauthorized'
- *       "403":
- *         $ref: '#/components/responses/Forbidden'
- *
- *   get:
- *     summary: Get all users
- *     description: Only admins can retrieve all users.
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: name
- *         schema:
- *           type: string
- *         description: User name
- *       - in: query
- *         name: role
- *         schema:
- *           type: string
- *         description: User role
- *       - in: query
- *         name: sortBy
- *         schema:
- *           type: string
- *         description: sort by query in the form of field:desc/asc (ex. name:asc)
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *         default: 10
- *         description: Maximum number of users
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Page number
- *     responses:
- *       "200":
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 results:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
- *                 page:
- *                   type: integer
- *                   example: 1
- *                 limit:
- *                   type: integer
- *                   example: 10
- *                 totalPages:
- *                   type: integer
- *                   example: 1
- *                 totalResults:
- *                   type: integer
- *                   example: 1
+ *                $ref: '#/components/schemas/Dashboard'
  *       "401":
  *         $ref: '#/components/responses/Unauthorized'
  *       "403":
@@ -160,11 +63,11 @@ module.exports = router;
 
 /**
  * @swagger
- * /users/{id}:
+ * /dashboard/{id}:
  *   get:
- *     summary: Get a user
- *     description: Logged in users can fetch only their own user information. Only admins can fetch other users.
- *     tags: [Users]
+ *     summary: Get a dashboard
+ *     description: Get dashboard and its widgets
+ *     tags: [Dashboards]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -173,14 +76,14 @@ module.exports = router;
  *         required: true
  *         schema:
  *           type: string
- *         description: User id
+ *         description: Dashboard id
  *     responses:
  *       "200":
  *         description: OK
  *         content:
  *           application/json:
  *             schema:
- *                $ref: '#/components/schemas/User'
+ *                $ref: '#/components/schemas/Dashboard'
  *       "401":
  *         $ref: '#/components/responses/Unauthorized'
  *       "403":
@@ -189,9 +92,9 @@ module.exports = router;
  *         $ref: '#/components/responses/NotFound'
  *
  *   patch:
- *     summary: Update a user
- *     description: Logged in users can only update their own information. Only admins can update other users.
- *     tags: [Users]
+ *     summary: Update a dashboard
+ *     description: Update dashboard info or widgets (or layout design)
+ *     tags: [Dashboards]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -200,38 +103,32 @@ module.exports = router;
  *         required: true
  *         schema:
  *           type: string
- *         description: User id
+ *         description: Dashboard id
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
+ *               - layout
  *             properties:
  *               name:
  *                 type: string
- *               email:
- *                 type: string
- *                 format: email
- *                 description: must be unique
- *               password:
- *                 type: string
- *                 format: password
- *                 minLength: 8
- *                 description: At least one number and one letter
+ *               layout:
+ *                 type: object
+ *                 description: layout contains n*3 matrix of objects with properties (widget id and widget position)
  *             example:
- *               name: fake name
- *               email: fake@example.com
- *               password: password1
+ *               name: Dashboard 1
+ *               layout: [[{"widget":"649b241daa214b33bc3ca16a","position":{"row":1,"col":1,"sizeX":1,"sizeY":1}},{"widget":"649b51d05025f55720347d93","position":{"row":1,"col":2,"sizeX":1,"sizeY":1}},{"widget":"649b52234f03d61f5cad38eb","position":{"row":1,"col":3,"sizeX":1,"sizeY":1}}],[{"widget":"649b52334f03d61f5cad38ee","position":{"row":2,"col":1,"sizeX":2,"sizeY":1}},{"widget":"649b52474f03d61f5cad38f1","position":{"row":2,"col":3,"sizeX":1,"sizeY":2}}],[{"widget":"649b52544f03d61f5cad38f4","position":{"row":3,"col":1,"sizeX":1,"sizeY":1}},{"widget":"649b527a4f03d61f5cad38f9","position":{"row":3,"col":2,"sizeX":1,"sizeY":1}}]]
  *     responses:
  *       "200":
  *         description: OK
  *         content:
  *           application/json:
  *             schema:
- *                $ref: '#/components/schemas/User'
- *       "400":
- *         $ref: '#/components/responses/DuplicateEmail'
+ *                $ref: '#/components/schemas/Dashboard'
  *       "401":
  *         $ref: '#/components/responses/Unauthorized'
  *       "403":
@@ -240,9 +137,9 @@ module.exports = router;
  *         $ref: '#/components/responses/NotFound'
  *
  *   delete:
- *     summary: Delete a user
- *     description: Logged in users can delete only themselves. Only admins can delete other users.
- *     tags: [Users]
+ *     summary: Delete a dashboard
+ *     description: Deletes dashboard
+ *     tags: [Dashboards]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -251,7 +148,7 @@ module.exports = router;
  *         required: true
  *         schema:
  *           type: string
- *         description: User id
+ *         description: Dashboard id
  *     responses:
  *       "200":
  *         description: No content
@@ -261,4 +158,40 @@ module.exports = router;
  *         $ref: '#/components/responses/Forbidden'
  *       "404":
  *         $ref: '#/components/responses/NotFound'
+ */
+
+
+/**
+ * @swagger
+ * /dashboard/{id}/share/{userId}:
+ *   post:
+ *     summary: Share dashboard
+ *     description: Share view access of dashboard with another user
+ *     tags: [Dashboards]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Dashboard id
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User id
+ *     responses:
+ *       "201":
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *                $ref: '#/components/schemas/Dashboard'
+ *       "401":
+ *         $ref: '#/components/responses/Unauthorized'
+ *       "403":
+ *         $ref: '#/components/responses/Forbidden'
  */

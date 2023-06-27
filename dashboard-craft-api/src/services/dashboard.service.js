@@ -1,89 +1,129 @@
 const httpStatus = require('http-status');
-const { User } = require('../models');
 const ApiError = require('../utils/ApiError');
 
-/**
- * Create a user
- * @param {Object} userBody
- * @returns {Promise<User>}
- */
-const createUser = async (userBody) => {
-  if (await User.isEmailTaken(userBody.email)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
-  }
-  return User.create(userBody);
-};
+const { Dashboard } = require('../models');
+const { isDashboardLayoutValid } = require('../validations/layout.validation');
+
+const mongoose = require('mongoose');
 
 /**
- * Query for users
- * @param {Object} filter - Mongo filter
- * @param {Object} options - Query options
- * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
- * @param {number} [options.limit] - Maximum number of results per page (default = 10)
- * @param {number} [options.page] - Current page (default = 1)
- * @returns {Promise<QueryResult>}
- */
-const queryUsers = async (filter, options) => {
-  const users = await User.paginate(filter, options);
-  return users;
-};
-
-/**
- * Get user by id
- * @param {ObjectId} id
- * @returns {Promise<User>}
- */
-const getUserById = async (id) => {
-  return User.findById(id);
-};
-
-/**
- * Get user by email
- * @param {string} email
- * @returns {Promise<User>}
- */
-const getUserByEmail = async (email) => {
-  return User.findOne({ email });
-};
-
-/**
- * Update user by id
+ * Create a dashboard
+ * @param {Object} dashboardBody
  * @param {ObjectId} userId
+ * @returns {Promise<Dashboard>}
+ */
+const createDashboard = async (dashboardBody, userId) => {
+  const { layout } = dashboardBody;
+  const isLayoutValid = isDashboardLayoutValid(layout);
+
+  console.log(isLayoutValid);
+  if (!isLayoutValid) {
+    throw new Error('Ensure that widget position are not overlapping.');
+  }
+
+  // add owner to dashboard document
+  dashboardBody.owner_id = mongoose.Types.ObjectId(userId);
+  dashboardBody.shared_with = [];
+
+  return Dashboard.create(dashboardBody);
+};
+
+/**
+ * Get dashboard
+ * @param {ObjectId} dashboardId
+ * @param {ObjectId} userId
+ * @returns {Promise<Dashboard>}
+ */
+const getDashboard = async (dashboardId, userId) => {
+  const dashboard = Dashboard.findById(dashboardId);
+
+  // check if user has access to requested dashboard
+  if (dashboard.owner_id.equals(userId) || dashboard.shared_with.includes(userId)) {
+    return dashboard;
+  } else {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Contact dashboard owner for view access.');
+  }
+};
+
+/**
+ * Update a dashboard
+ * @param {ObjectId} dashboardId
  * @param {Object} updateBody
- * @returns {Promise<User>}
+ * @param {ObjectId} userId
+ * @returns {Promise<Dashboard>}
  */
-const updateUserById = async (userId, updateBody) => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+const updateDashboard = async (dashboardId, updateBody, userId) => {
+  const dashboard = await Dashboard.findById(dashboardId);
+
+  if (!dashboard) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Dashboard not found.');
   }
-  if (updateBody.email && (await User.isEmailTaken(updateBody.email, userId))) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
+
+  // only dashboard owner can update the dashboard
+  if (!dashboard.owner_id.equals(userId)) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Contact dashboard owner to update the dashboard.');
   }
-  Object.assign(user, updateBody);
-  await user.save();
-  return user;
+
+  const { layout } = updateBody;
+  const isLayoutValid = isDashboardLayoutValid(layout);
+
+  if (!isLayoutValid) {
+    throw new Error('Ensure that widget position are not overlapping.');
+  }
+
+  Object.assign(dashboard, updateBody);
+  await dashboard.save();
+  return dashboard;
 };
 
 /**
- * Delete user by id
+ * Delete dashboard
+ * @param {ObjectId} dashboardId
  * @param {ObjectId} userId
- * @returns {Promise<User>}
+ * @returns {void}
  */
-const deleteUserById = async (userId) => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+const deleteDashboard = async (dashboardId, userId) => {
+  const dashboard = await Dashboard.findById(dashboardId);
+
+  if (!dashboard) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Dashboard not found.');
   }
-  await user.remove();
-  return user;
+
+  if (!dashboard.owner_id.equals(userId)) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Contact dashboard owner to remove given dashboard.');
+  }
+
+  await dashboard.remove();
+};
+
+/**
+ * Share dashboard to another user
+ * @param {ObjectId} dashboardId
+ * @param {ObjectId} userId
+ * @returns {void}
+ */
+const shareDashboard = async (dashboardId, ownerId, userId) => {
+  const dashboard = await Dashboard.findById(dashboardId);
+
+  if (!dashboard) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Dashboard not found.');
+  }
+
+  if (!dashboard.owner_id.equals(ownerId)) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Only dashboard owner can share access to another user.');
+  }
+
+  await Dashboard.findOneAndUpdate(
+    { _id: dashboardId },
+    { $push: { shared_with: mongoose.Types.ObjectId(userId) } },
+    { new: true }
+  );
 };
 
 module.exports = {
-  createUser,
-  queryUsers,
-  getUserById,
-  getUserByEmail,
-  updateUserById,
-  deleteUserById,
+  createDashboard,
+  getDashboard,
+  updateDashboard,
+  deleteDashboard,
+  shareDashboard
 };
