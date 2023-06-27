@@ -11,12 +11,14 @@ Dynamic Dashboard is a feature that allows users to create interactive and custo
 
 ## Development
 
+Remember to set environment variable MONGO_CONNECTION_STRING with proper connection string
+
 Install dependencies
 > yarn
 
-Start app
+Start app in developement
 > yarn run dev
 
 <br/>
 
-Refer API documentation at, http://localhost:3000/v1/docs
+Try out APIs at, http://localhost:3000/v1/docs
