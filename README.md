@@ -5,7 +5,7 @@ Dynamic Dashboard is a feature that allows users to create interactive and custo
 
 ## Architecture diagram
 
-![alt text](/dynamic-dashboard.svg)
+![alt text](/dashboard-craft.svg)
 
 <br/>
 
